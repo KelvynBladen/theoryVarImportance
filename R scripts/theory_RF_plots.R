@@ -148,6 +148,54 @@ ggplot(
 
 ggsave("../plots/rf_cov_vs_delta.jpg", dpi = 1200, width = 6, height = 4)
 
+
+df_longf <- summary_df |>
+  tidyr::pivot_longer(
+    cols = c(y, yc, sd, sdc, ymin, yminc, ymax, ymaxc, theory, theoryc),
+    names_to = c(".value", "type"),
+    names_pattern = "^(y|ymin|ymax|sd|theory)(c?)$"
+  ) %>%
+  dplyr::mutate(type = ifelse(type == "", "Covariance", "Correlation"))
+
+df_longf$type <- factor(df_longf$type, levels = c("Covariance", "Correlation"))
+
+ggplot(
+  df_longf |> dplyr::filter(type == "Covariance"),
+  aes(x = Delta, y = y, group = Metric)
+) +
+  ylab("Importance") +
+  geom_line(aes(x = Delta, y = theory), linewidth = 0.7, color = "red") +
+  geom_point(size = 2, aes(color = Metric)) +
+  geom_errorbar(aes(
+    ymin = ymin,
+    ymax = ymax,
+    color = Metric
+  ), width = 0.07, linewidth = 0.9) +
+  ggeasy::easy_remove_legend_title() +
+  ggh4x::facet_grid2(p ~ n,
+                     labeller = "label_both",
+                     scales = "free_y"
+  ) +
+  ggh4x::facetted_pos_scales(
+    y = list(
+      p == 6 ~ scale_y_continuous(limits = c(-0.5, 6), breaks = 0:3 * 2),
+      p == 9 ~ scale_y_continuous(limits = c(-1.2, 9), breaks = 0:3 * 3),
+      p == 12 ~ scale_y_continuous(limits = c(-1.5, 12), breaks = 0:4 * 3)
+    )
+  ) +
+  scale_x_continuous(limits = c(-0.05, 1.05), breaks = c(0, 0.5, 1)) +
+  scale_color_manual(values = c("blue", "black")) +
+  theme(
+    axis.text.x = element_text(size = 13),
+    axis.text.y = element_text(size = 13),
+    axis.title.x = element_text(size = 15),
+    axis.title.y = element_text(size = 15),
+    strip.text = element_text(size = 14),
+    legend.text = element_text(size = 14)
+  )
+
+ggsave("../plots/rf_cov_vs_delta_full1.jpg", dpi = 800, width = 10, height = 8)
+
 ############### Tall #########################
 
 df_long <- summary_df |>

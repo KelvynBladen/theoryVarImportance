@@ -139,7 +139,7 @@ piv_df$Metric <- factor(piv_df$Metric, levels = c("PaP", "LOCO"))
 ######### C ##################################################################
 
 summary_cdf <- df |>
-  filter(n > 20) |>
+  #filter(n > 20) |>
   dplyr::group_by(Delta, p, n) |>
   dplyr::summarise(
     y = mean((c - c_theory) / c_theory, na.rm = TRUE) * 100,
@@ -184,6 +184,41 @@ ggplot(
   )
 
 ggsave("../plots/c_vs_delta.jpg", dpi = 800, width = 6, height = 4)
+
+
+ggplot(
+  summary_cdf,
+  aes(x = Delta, y = yc)
+) +
+  geom_line(aes(x = Delta, y = theory, group = p),
+            color = "red", linewidth = 0.7
+  ) +
+  geom_point(size = 2) +
+  geom_errorbar(aes(ymin = yminc, ymax = ymaxc),
+                width = 0.07, linewidth = 0.9) +
+  ylab(latex2exp::TeX("$\\textit{c}$: Empirical Distributions")) +
+  scale_x_continuous(limits = c(-0.04, 1.03), breaks = 0:5 / 5) +
+  ggh4x::facet_grid2(p ~ n, scales = "free_y", labeller = "label_both") +
+  # maybe change to fixed
+  ggh4x::facetted_pos_scales(
+    y = list(
+      scale_y_continuous(breaks = c(-0.4, -0.2, 0, 0.2, 0.4, 0.6)),
+      scale_y_continuous(breaks = c(-0.2, -0.1, 0, 0.1, 0.2)),
+      scale_y_continuous(breaks = c(-0.2, -0.1, 0, 0.1, 0.2)),
+      scale_y_continuous(breaks = c(-0.2, -0.1, 0, 0.1, 0.2))
+    )
+  ) +
+  theme(
+    axis.text.x = element_text(size = 13),
+    axis.text.y = element_text(size = 13),
+    axis.title.x = element_text(size = 15),
+    axis.title.y = element_text(size = 15),
+    strip.text = element_text(size = 14),
+    legend.text = element_text(size = 14)
+  )
+
+ggsave("../plots/c_vs_delta_full1.jpg", dpi = 800, width = 10, height = 9)
+
 
 ######## Combo Plots ###########################################################
 
@@ -292,6 +327,43 @@ ggplot(ss |> filter(p %in% c(6, 12)), aes(x = n, y = Mean)) +
 
 # ggsave("../plots/combo_parity_t.jpg", dpi = 1200, height = 5.8, width = 4.4)
 
+
+ggplot(ss, aes(x = n, y = Mean)) +
+  geom_hline(yintercept = 0, color = "red") +
+  geom_point(size = 1.8) +
+  geom_errorbar(aes(ymin = min, ymax = max), width = 0.3, linewidth = 0.9) +
+  xlab(latex2exp::TeX("Sample Size ($\\textit{n}$)")) +
+  ylab("Importance: % Change Empirical vs. Theory") +
+  scale_x_log10(breaks = c(20, 200, 2000)) +
+  ggh4x::facet_nested(
+    rows = vars(p), cols = vars(Metric, Type),
+    labeller = labeller(
+      p = label_both,
+      Type = label_value,
+      Metric = label_value
+    ),
+    scales = "free_y"
+  ) +
+  ggh4x::facetted_pos_scales(
+    y = list(
+      scale_y_continuous(limits = c(-100, 165), breaks = -2:3 * 50),
+      scale_y_continuous(limits = c(-100, 165), breaks = -2:3 * 50),
+      scale_y_continuous(limits = c(-100, 165), breaks = -2:3 * 50),
+      scale_y_continuous(limits = c(-100, 165), breaks = -2:3 * 50)
+    )
+  ) +
+  theme(
+    axis.text.x = element_text(size = 12),
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    strip.text = element_text(size = 12),
+    legend.text = element_text(size = 12)
+  )
+
+ggsave("../plots/combo_parity_w_full.jpg", dpi = 800, width = 7.2,
+       height = 8)
+
 ######################### LOCO vs T ##########################
 
 ggplot(
@@ -303,7 +375,7 @@ ggplot(
   xlab("t-stat") +
   geom_abline(slope = 1, col = "red", linewidth = 2) +
   geom_point(size = 2, alpha = 0.3) +
-  ggh4x::facet_grid2(n ~ p, scales = "fixed", labeller = "label_both") +
+  ggh4x::facet_grid2(p ~ n, scales = "fixed", labeller = "label_both") +
   theme(
     axis.text.x = element_text(size = 12),
     axis.text.y = element_text(size = 12),
@@ -313,6 +385,36 @@ ggplot(
   )
 
 ggsave("../plots/loco_vs_t.jpg", dpi = 800, width = 5, height = 4)
+
+
+ggplot(
+  df,
+  aes(x = t_stat, y = LOCO)
+) +
+  xlab("t-stat") +
+  geom_abline(slope = 1, col = "red", linewidth = 2) +
+  geom_point(size = 2, alpha = 0.3) +
+  ggh4x::facet_grid2(p ~ n, scales = "fixed", independent = F, labeller = "label_both") +
+  scale_x_continuous(limits = c(-0.05, max(df$LOCO)), breaks = 0:3) +
+  # ggh4x::facetted_pos_scales(
+  #   x = list(
+  #     n == 63 ~ scale_x_continuous(limits = c(-0.01, 1.5), breaks = 0:3 / 2),
+  #     n == 200 ~ scale_x_continuous(limits = c(-0.01, 1.2), breaks = 0:2 / 2),
+  #     n == 632 ~ scale_x_continuous(limits = c(-0.01, 1.1), breaks = 0:2 / 2),
+  #     n == 2000 ~ scale_x_continuous(limits = c(-0.01, 1.05), breaks = 0:2 / 2)),
+  #   y = list(
+  #     p == 3 ~ scale_y_continuous(breaks = 0:2),
+  #     p == 6 ~ scale_y_continuous(breaks = 0:2))
+  #   ) +
+  theme(
+    axis.text.x = element_text(size = 16),
+    axis.text.y = element_text(size = 16),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18),
+    strip.text = element_text(size = 16)
+  )
+
+ggsave("../plots/loco_vs_t_full1.jpg", dpi = 800, width = 12, height = 8)
 
 ##############################################################
 ############# PaP and LOCO dependence on Delta ###############
@@ -343,6 +445,16 @@ df_long <- summaryd_df |>
   dplyr::mutate(type = ifelse(type == "", "Covariance", "Correlation"))
 
 df_long$type <- factor(df_long$type, levels = c("Covariance", "Correlation"))
+
+df_longf <- summaryd_df |>
+  tidyr::pivot_longer(
+    cols = c(y, yc, sd, sdc, ymin, yminc, ymax, ymaxc, theory, theoryc),
+    names_to = c(".value", "type"),
+    names_pattern = "^(y|ymin|ymax|sd|theory)(c?)$"
+  ) %>%
+  dplyr::mutate(type = ifelse(type == "", "Covariance", "Correlation"))
+
+df_longf$type <- factor(df_longf$type, levels = c("Covariance", "Correlation"))
 
 ######## Wide ##########
 ggplot(
@@ -380,6 +492,45 @@ ggplot(
   )
 
 ggsave("../plots/cov_vs_delta.jpg", dpi = 800, width = 6, height = 4)
+
+
+ggplot(
+  df_longf |> filter(type == "Covariance"),
+  aes(x = Delta, y = y, group = Metric)
+) +
+  ylab("Importance") +
+  geom_line(aes(x = Delta, y = theory), linewidth = 0.7, color = "red") +
+  geom_point(size = 2, aes(color = Metric)) +
+  geom_errorbar(aes(
+    ymin = ymin,
+    ymax = ymax,
+    color = Metric
+  ), width = 0.07, linewidth = 0.9) +
+  ggeasy::easy_remove_legend_title() +
+  ggh4x::facet_grid2(p ~ n,
+                     labeller = "label_both",
+                     scales = "free_y"
+  ) +
+  ggh4x::facetted_pos_scales(
+    y = list(
+      p == 3 ~ scale_y_continuous(limits = c(-0.2, 3.7)),
+      p == 6 ~ scale_y_continuous(limits = c(-0.2, 6), breaks = 0:3 * 2),
+      p == 9 ~ scale_y_continuous(limits = c(-0.2, 6.8), breaks = 0:3 * 2),
+      p == 12 ~ scale_y_continuous(limits = c(-0.2, 8), breaks = 0:4 * 2)
+    )
+  ) +
+  scale_x_continuous(limits = c(-0.05, 1.05), breaks = c(0, 0.5, 1)) +
+  scale_color_manual(values = c("blue", "black")) +
+  theme(
+    axis.text.x = element_text(size = 15),
+    axis.text.y = element_text(size = 15),
+    axis.title.x = element_text(size = 18),
+    axis.title.y = element_text(size = 18),
+    strip.text = element_text(size = 16),
+    legend.text = element_text(size = 16)
+  )
+
+ggsave("../plots/cov_vs_delta_full1.jpg", dpi = 800, width = 10, height = 8)
 
 ###### Tall #######
 
